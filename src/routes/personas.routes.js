@@ -75,9 +75,12 @@ router.put('/:id', async (req, res) => {
 // Ruta para eliminar una persona de la base de datos (por ID)
 router.delete('/:id', async (req, res ) => {
     try {
+        const id = req.params.id;
+        console.log(`Intentando eliminar persona con ID: ${id}`);
         // Utilizar el metodo eliminar con el  ID recibido
         const resultado = await crud.eliminar(tabla, idCampo, req.params.id);
-        
+       
+        console.log('Resultado de eliminación:', resultado);
         //Respuesta con un mensaje o confirmacion de eliminacion
         res.json(resultado);
     } catch (error) {

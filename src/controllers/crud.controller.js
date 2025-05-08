@@ -60,7 +60,7 @@ class CrudController {
       async eliminar (tabla, idCampo, id) {
         try {
             // Ejecuta la eliminacion del registro
-            const [resultado] = await db.query(`DELETE FROMM ?? WHERE ?? = ?`, [tabla, idCampo, id]);
+            const [resultado] = await db.query(`DELETE FROM ?? WHERE ?? = ?`, [tabla, idCampo, id]);
             // Si no se elimino ninguna fila, es que el ID no existe
             if(resultado.affectedRows === 0) {
                 throw new Error('Regisro no encontrado')

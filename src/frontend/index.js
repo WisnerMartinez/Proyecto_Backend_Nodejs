@@ -31,7 +31,7 @@ async function mostrarPersonas() {
     tablaPersonasBody.innerHTML = ''; // Limpiar el contenido actual
 
     for (const persona of personas) {
-        const rtr = document.createElement('tr'); // Crear una fila HTML
+        const tr = document.createElement('tr'); // Crear una fila HTML
 
         // Cargar la imagen si existe
         let imagenHTML = 'Sin imagen';
@@ -49,7 +49,7 @@ async function mostrarPersonas() {
         // Se construye la fila HTML con los datos de la persona y los botones de accion
         // Se utiliza template literals para facilitar la insercion de variables en el HTML
 
-        true.innerHTML = `
+        tr.innerHTML = `
         <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">${persona.id_persona}</td>
         <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">${persona.nombre}</td>
         <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">${persona.apellido}</td>
@@ -60,7 +60,7 @@ async function mostrarPersonas() {
             <button onclick="eliminarPersona(${persona.id_persona})">Eliminar</button>
         </td>
         `;
-        tablaPersonasBody.appendChild(fr); // Se añade la fila a la tabla
+        tablaPersonasBody.appendChild(tr); // Se añade la fila a la tabla
     }
 }
 
@@ -123,7 +123,7 @@ async function crearPersona(persona)
     // se envia el objeto persona como cuerpo de la peticion en formato JSON
     // Se espera la respuesta y se convierte a JSON
 {
-    const persona = await fetch(`${API_URL}/personas`, {
+    const response = await fetch(`${API_URL}/personas`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(persona)
@@ -170,7 +170,7 @@ async function eliminarPersona(id)
     }
 }
 
-async function editarPersona(persona) 
+async function editarPersona(id) 
 // Se utiliza el metodo GET para obtener los datos de una persona existente
 // Se utiliza el ID de la persona para identificarla en el backend 
 // Se espera la respuesta y se convierte a JSON

@@ -30,49 +30,64 @@ async function cargarPersonas() {
 async function mostrarPersonas() {
     tablaPersonasBody.innerHTML = ''; // Limpiar el contenido actual
 
-    //
+    // Obtiene el elemeento <template> que contiene la estructura de una fila de persona
+    const template = document.getElementById('template');
 
+    // Recorre la fila de personas obtenidas del backend y crea una fila para cada una
     for (const persona of personas) {
-        const rtr = document.createElement('tr'); // Crear una fila HTML
+        // Clona el contenido del template (la fila predefinida en el HTML)
+        const clone = template.content.cloneNode(true);
 
-        // Cargar la imagen si existe
+        // Obtiene todas las celdas <td> dentro del clon
+        const tds = clone.querySelectorAll('td');
+
+        // inicializa el contenido de imagen como 'Sin imagen' por defecto
         let imagenHTML = 'Sin imagen';
+
+        // Intenta obtener la imagen de la persona desde el backend
         try {
+            // Se realiza una peticion GET al endpoint de imagen de la persona por su ID
             const response = await fetch(`${API_URL}/imagenes/obtener/personas/id_persona/${persona.id_persona}`);
-            // Se realiza una peticion al backend para obtener la imagen de la persona en base64
+            
+            // Covierte la respuesta a un objeto JSON
             const data = await response.json();
+
+            // si hay una imagen en la respuesta, se crea un elemento <img> con la imagen en base64
             if (data.imagen) {
                 imagenHTML = `<img src="data:image/jpeg;base64,${data.imagen}"style="max-width: 100px; max-height: 100px;">`
             }
         } catch (error) {
+            // si ocurre un error al cargar la imagen, se muestra un mensaje de error en la consola
             console.error('Error al cargar imagen:', error);
         }
 
-        // Se construye la fila HTML con los datos de la persona y los botones de accion
-        // Se utiliza template literals para facilitar la insercion de variables en el HTML
+        // Llena las celdas con los datos de la persona
+        tds[0].textContent = persona.id_persona; // ID de la persona
+        tds[1].textContent = persona.nombre; // Nombre de la persona
+        tds[2].textContent = persona.apellido; // Apellido de la persona
+        tds[3].textContent = persona.email; // email
+        tds[4].innerHTML = imagenHTML; // Imagen (si existe, muestra la imagen, si no, muestra 'Sin imagen')
 
-        true.innerHTML = `
-        <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">${persona.id_persona}</td>
-        <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">${persona.nombre}</td>
-        <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">${persona.apellido}</td>
-        <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">${persona.email}</td>
-        <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">${imagenHTML}</td>
-        <td style="border: 1px solid #ddd; text-align: center; padding: 8px;">
-            <button onclick="editarPersona(${persona.id_persona})">Editar</button>
-            <button onclick="eliminarPersona(${persona.id_persona})">Eliminar</button>
-        </td>
-        `;
-        tablaPersonasBody.appendChild(fr); // Se añade la fila a la tabla
+        // Busca los botones de editar y eliminar en el clon
+        const btnEditar = clone.querySelector('.btn-editar');
+        const btnEliminar = clone.querySelector('.btn-eliminar');
+
+        // Asigna el evento de clic al boton de editar, llamando a la funcion con el ID de la persona
+        btnEditar.addEventListener('click', () =>  editarPersona(persona.id_persona)); 
+
+        // Asigna el evento de clic al boton de eliminar, llamando a la funcion con el ID de la persona
+        btnEliminar.addEventListener('click', () =>  eliminarPersona(persona.id_persona));
+       
+        // Finalmente, agrega la fila lonada (Con datos y botones configurados) al cuerpo de la tabla
+        tablaPersonasBody.appendChild(clone);
     }
 }
 
+// Funcion que maneja el envio del formulario (crear o editar persona)
 async function manejarSubmit(e) {
- e.preventDefault(); // Evita que el formulario recargue la pagina
- 
- // Obtener o recopilar los valores del formulario y crear un objeto persona
- // Se utiliza el metodo getElementById para obtener los valores del cada campo del formulario
- // Se utiliza ParseInt y parseFloat para convertir los valores a numeros enteros o decimales
- // Se utilaza el operador || para asignar null si el campo esta vacio
+ e.preventDefault(); // previene el comportamiento por defecto del formulario
+
+ // Obtiene los datos del formulario
  const persona = {
     id_persona: document.getElementById('id_persona').value || null,
     nombre: document.getElementById('nombre').value,
@@ -87,7 +102,9 @@ async function manejarSubmit(e) {
 
  try {
     if (persona.id_persona) {
-        // Si hay una imagen seleccionada, se actualiza primero la imagen
+        // Si estamos editando (id_persona existe)
+       
+        // Subir imagen si fue seleccionada
         if (imagenInput.files[0]){
             const imagenBase64 = await convertirImagenABase64(imagenInput.files[0]);
             await fetch(`${API_URL}/imagenes/subir/personas/id_persona/${persona.id_persona}`, {
@@ -120,26 +137,19 @@ async function manejarSubmit(e) {
 
 }
 
-async function crearPersona(persona) 
-    // Se utiliza el metodo POST para crear una nueva persona en el backend
-    // se envia el objeto persona como cuerpo de la peticion en formato JSON
-    // Se espera la respuesta y se convierte a JSON
-{
-    const persona = await fetch(`${API_URL}/personas`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(persona)
+async function crearPersona(persona){
+
+
+  const response = await fetch(`${API_URL}/personas`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(persona)
     });
-    return await response.json();
+    return await response.json(); // Devuelve el objeto persona con el ID asignado por el backend
+} 
 
-}
-
-async function actualizarPersona(persona) 
-// Se utiliza el metodo PUT para actualizar los datos de una persona existente
-// Se envia el objeto persona como cuerpo de la peticion en formato JSON
-// Se espera la respuesta y se convierte a JSON
-// Se utiliza el ID de a persona para la identificacion en el backend
-{
+// Actualiza los datos de una persona existente
+async function actualizarPersona(persona) {
     const response = await fetch(`${API_URL}/personas/${persona.id_persona}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -148,14 +158,8 @@ async function actualizarPersona(persona)
     return await response.json();
 }
 
-async function eliminarPersona(id)
-// Se utiliza el metodo DELETE para eliminar una persona existente
-// Se utiliza el ID de la persona para identificarla en el backend
-// Se espera la respuesta y se convierte en JSON
-// Se utiliza el metodo DELETE para eliminar la imagen asociada a la persona
-// Se utiliza el ID de la persona para identificarla en el backend
-// Se espera respuesta y convierte a  JSON 
-{
+// Elimina una persona y su imagen asociada
+async function eliminarPersona(id) {
     if (confirm('Esta seguro de eliminar esta persona?')) {
         try {
             // Primero se intenta eliminar la imagen si existe
@@ -172,15 +176,9 @@ async function eliminarPersona(id)
     }
 }
 
-async function editarPersona(persona) 
-// Se utiliza el metodo GET para obtener los datos de una persona existente
-// Se utiliza el ID de la persona para identificarla en el backend 
-// Se espera la respuesta y se convierte a JSON
-{
+// Llama el formulario con los datos de la persona a editar
+async function editarPersona(id) {
     const persona = personas.find(p => p.id_persona === id);
-    // Se utiliza el ID de la persona para identificarla en el backend
-    // Se espera la respuesta y se convierte a JSON 
-    // Se utiliza el metodo GET para obtener los datos de una persona existente
     if(persona) {
       document.getElementById('id_persona').value = persona.id_persona;
       document.getElementById('nombre').value = persona.nombre;
@@ -211,10 +209,8 @@ async function editarPersona(persona)
     }
 }
 
+// Limpia todos los campos del formulario
 function limpiarFormulario()
-// Se utiliza el metodo reset para limpiar todos los campos del formulario
-// Se utiliza el metodo getElementById para obtener el ID de la persona y se establece en vacio
-// Se utiliza el metodo getElementById para obtener el elemento de previsualizacion de la imagen y se establece en vacio
 {
     personaForm.reset();
     document.getElementById('id_persona').value = '';
@@ -222,7 +218,7 @@ function limpiarFormulario()
     previewImagen.src = '';
 }
 
-// Funciones para el manejo de imagenes
+// Muestra una previsualizacion de la imagen seleccionada
 function manejarImagen(e) {
     const file  = e.target.files[0];
     if (file) {
@@ -237,17 +233,16 @@ function manejarImagen(e) {
         previewImagen.style.display = 'none';
         previewImagen.src = '';
     }
-    // Se utiliza el metodo readAsDataURL para leer el archivo como una URL de datos
+    
 }
 
-// Funcion para convrtir imagen a base64
+// Convierte la imagen a base64 para enviarla al backend
 function convertirImagenABase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => {
-            // Eliminar el prefijo "data:image/jpeg;base64," del resultado
-            const base64 = reader.result.split(',')[1];
+            const base64 = reader.result.split(',')[1]; // Elimina el prefijo del data URL
             resolve(base64);
         };
         reader.onerror = error => reject(error);
